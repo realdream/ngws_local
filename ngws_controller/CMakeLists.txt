@@ -140,6 +140,13 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+add_executable(base_controller src/base_controller.cpp)
+add_dependencies(base_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(base_controller
+  ${catkin_LIBRARIES}
+)
+
+
 #############
 ## Install ##
 #############
