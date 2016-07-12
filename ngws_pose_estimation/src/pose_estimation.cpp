@@ -20,14 +20,17 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Int8.h>
 
 ros::Publisher * odom_pub_ptr;
 
 nav_msgs::Odometry odom_msg;
 geometry_msgs::PoseStamped pose_msg;
-
+std_msgs::Int8 pose_status_msg;
+ 
 ros::Time last_get_odom_time;
 ros::Time last_get_pose_time;
+ros::Time last_get_pose_status_time;
 
  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
@@ -43,6 +46,15 @@ last_get_odom_time=ros::Time::now();
 
 pose_msg=*msg;
 last_get_pose_time=ros::Time::now();
+
+
+}
+
+void poseStatusCallback(const std_msgs::Int8::ConstPtr& msg)
+{
+
+pose_status_msg=*msg;
+last_get_pose_status_time=ros::Time::now();
 
 
 }
@@ -69,7 +81,9 @@ int main(int argc, char** argv){
 
   ros::Subscriber odom_sub = nh.subscribe("odom", 1000, odomCallback);
 
-  ros::Subscriber pose_sub = nh.subscribe("ar_tag/pose", 1000, poseCallback);
+  ros::Subscriber tracker_pose_sub = nh.subscribe("tag_tracker/object_position", 1000, poseCallback);
+
+  ros::Subscriber tracker_status_sub = nh.subscribe("tag_tracker/status", 1000, poseStatusCallback);
 
   ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&main_loop));
 
@@ -77,6 +91,7 @@ int main(int argc, char** argv){
   
   last_get_odom_time=ros::Time::now();
   last_get_pose_time=ros::Time::now();
+  last_get_pose_status_time=ros::Time::now();
 
 
 
