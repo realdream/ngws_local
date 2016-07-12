@@ -1,0 +1,28 @@
+<launch>
+  <arg name="robot_group_ns" default="" />
+  <arg name="robot_node_ns" default="ngws" />
+	<arg name="x" default="0" />
+	<arg name="y" default="0" />
+	<arg name="z" default="0" />
+	<arg name="R" default="0" />
+	<arg name="P" default="0" />
+	<arg name="Y" default="0" />
+  <arg name="id" default="" />
+    <include file="$(find ngws_gazebo)/launch/ngws_vehicle.launch">
+      <arg name="parent_ns" value="$(arg robot_group_ns)/" />
+      <arg name="this_ns" value="$(arg robot_node_ns)" />
+      <arg name="id" value="$(arg id)" />
+      <arg name="x" value="$(arg x)" />
+      <arg name="y" value="$(arg y)" />
+      <arg name="z" value="$(arg z)" />
+      <arg name="R" value="$(arg R)"/>
+      <arg name="P" value="$(arg P)"/>
+      <arg name="Y" value="$(arg Y)" />
+    </include>
+    <include file="$(find ngws_local_bringup)/launch/robot_node.launch">
+      <arg name="parent_ns" value="$(arg robot_group_ns)/" />
+      <arg name="this_ns" value="$(arg robot_node_ns)" />
+      <arg name="id" value="$(arg id)" />
+    </include>
+
+</launch>

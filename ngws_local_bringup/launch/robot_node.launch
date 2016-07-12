@@ -1,7 +1,8 @@
 <launch>
+  <arg name="parent_ns" default="" />
+  <arg name="this_ns" default="ngws" />
   <arg name="id" default=""/>
-
-  <group ns="ngws$(arg id)">
+  <group ns="$(arg this_ns)$(arg id)/">
     <node name="base_controller" pkg="ngws_controller" type="base_controller" output="screen"/>
     <node name="pose_estimation" pkg="ngws_pose_estimation" type="pose_estimation" output="screen"/>  
     <node name="waypoints_actuator" pkg="ngws_waypoints_actuator" type="waypoints_actuator" output="screen"/>  
