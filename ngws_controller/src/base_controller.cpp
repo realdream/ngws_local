@@ -58,6 +58,14 @@ void odomCreator::main_loop()
     vel_msg.angular.y=0.0;
     vel_msg.angular.z=0.0;
   }
+	
+	tf::TransformBroadcaster odomBroadcaster;
+
+	geometry_msgs::TransformStamped odomTrans;
+	odomTrans.header.stamp = currentTime;
+  odomTrans.header.frame_id = "odom";	
+	odomTrans.child_frame_id = "base_link";
+
   nav_msgs::Odometry odom;
 	odom.header.stamp = currentTime;
 	odom.header.frame_id = "odom";
@@ -73,13 +81,24 @@ void odomCreator::main_loop()
 	odom.twist.twist = vel_msg;
 	double dt = (currentTime - lastTime).toSec();
 
-	currentPosition.pose.pose.position.x += dt * vel_msg.linear.x;
-	currentPosition.pose.pose.position.y += dt * vel_msg.linear.y;
-	currentPosition.pose.pose.position.z += dt * vel_msg.linear.z;
+	currentPosition.pose.pose.position.x += dt * (vel_msg.linear.x * cos(th) - vel_msg.linear.y * sin(th));
+	currentPosition.pose.pose.position.y += dt * (vel_msg.linear.y * cos(th) + vel_msg.linear.x * sin(th));
+	currentPosition.pose.pose.position.z = 0.0;
+
+	
+
 
 	th += dt * vel_msg.angular.z;
 	geometry_msgs::Quaternion odomQuat = tf::createQuaternionMsgFromYaw(th);	
 
+	odomTrans.transform.translation.x = currentPosition.pose.pose.position.x;
+	odomTrans.transform.translation.y = currentPosition.pose.pose.position.y;
+	odomTrans.transform.translation.z = 0.0;
+	odomTrans.transform.rotation = odomQuat;
+
+	odomBroadcaster.sendTransform(odomTrans);
+
+	odom.child_frame_id = "base_link";
 	odom.pose.pose.position = currentPosition.pose.pose.position;
 	odom.pose.pose.orientation = odomQuat;	
 

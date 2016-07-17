@@ -14,7 +14,6 @@ public:
 	Ipublisher() = default;
 	virtual void cmdCallback(const geometry_msgs::Twist::ConstPtr& msg) = 0;
 	virtual void main_loop() = 0;
-	//virtual void setCurrentTime(ros::Time p_T) = 0;
 	virtual ~Ipublisher() = default;
 
 };
@@ -25,7 +24,6 @@ public:
 	odomCreator(ros::Publisher &p_cmd_pub, ros::Publisher &p_odom_pub);
   void cmdCallback(const geometry_msgs::Twist::ConstPtr& msg);
 	void main_loop();
-	//void setCurrentTime(ros::Time p_T);
 	~odomCreator();
 
 private:
@@ -39,8 +37,7 @@ private:
 	ros::Time currentTime;
 
 	nav_msgs::Odometry currentPosition;	
-//	geometry_msgs::Quaternion odomQuat;
-	double th = 0;
+	double th = 0.0;
 
 };
 
