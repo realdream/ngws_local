@@ -17,69 +17,114 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
+#include "base_controller.hpp"
 #include <std_msgs/Float64MultiArray.h>
-#include <geometry_msgs/Twist.h>
+#include <math.h>
+#include <tf/transform_broadcaster.h>
 
-ros::Publisher * cmd_pub_ptr;
-ros::Publisher * odom_pub_ptr;
-
-geometry_msgs::Twist vel_msg;
-
-ros::Time last_get_vel_time;
- void cmdCallback(const geometry_msgs::Twist::ConstPtr& msg)
+namespace ngws_local
 {
 
-vel_msg=*msg;
-last_get_vel_time=ros::Time::now();
+odomCreator::odomCreator(ros::Publisher &p_cmd_pub, ros::Publisher &p_odom_pub)
+{
+	cmd_pub_ptr.reset(&p_cmd_pub);
+	odom_pub_ptr.reset(&p_odom_pub);
+	currentPosition.pose.pose.position.x = 0;
+	currentPosition.pose.pose.position.y = 0;
+	currentPosition.pose.pose.position.z = 0;
+	lastTime = ros::Time::now();
+	last_get_vel_time = ros::Time::now();
+}
+
+void odomCreator::cmdCallback(const geometry_msgs::Twist::ConstPtr& msg)
+{
+
+	vel_msg=*msg;
+	last_get_vel_time=ros::Time::now();
 
 
 }
 
-void main_loop()
+void odomCreator::main_loop()
 {
-  if(ros::Time::now()-last_get_vel_time>ros::Duration(0.5))
+	currentTime = ros::Time::now();
+	ros::Duration timeBetweenLastVelMsg = ros::Time::now() - last_get_vel_time;
+  if(timeBetweenLastVelMsg > ros::Duration(0.5))
   {
-    vel_msg.linear.x=0;
-    vel_msg.linear.y=0;
-    vel_msg.linear.z=0;
-    vel_msg.angular.x=0;
-    vel_msg.angular.y=0;
-    vel_msg.angular.z=0;
+    vel_msg.linear.x=0.0;
+  	vel_msg.linear.y=0.0;
+    vel_msg.linear.z=0.0;
+    vel_msg.angular.x=0.0;
+    vel_msg.angular.y=0.0;
+    vel_msg.angular.z=0.0;
   }
   nav_msgs::Odometry odom;
+	odom.header.stamp = currentTime;
+	odom.header.frame_id = "odom";
+
+
   std_msgs::Float64MultiArray cmd;
 
- cmd.data.resize(4);
+  cmd.data.resize(4);
 
+	double pi;
+	pi = M_PI;
 
+	odom.twist.twist = vel_msg;
+	double dt = (currentTime - lastTime).toSec();
 
+	currentPosition.pose.pose.position.x += dt * vel_msg.linear.x;
+	currentPosition.pose.pose.position.y += dt * vel_msg.linear.y;
+	currentPosition.pose.pose.position.z += dt * vel_msg.linear.z;
+
+	th += dt * vel_msg.angular.z;
+	geometry_msgs::Quaternion odomQuat = tf::createQuaternionMsgFromYaw(th);	
+
+	odom.pose.pose.position = currentPosition.pose.pose.position;
+	odom.pose.pose.orientation = odomQuat;	
 
   odom_pub_ptr->publish(odom);
   cmd_pub_ptr->publish(cmd);
+	lastTime = currentTime;
 }
 
-int main(int argc, char** argv){
+odomCreator::~odomCreator()
+{
+}
+
+}//end of ngws_local
+
+int main(int argc, char** argv)
+{
+	using namespace ngws_local;
+
   ros::init(argc, argv, "base_controller");
   ros::NodeHandle nh;
 
+
   ros::Publisher cmd_pub =
       nh.advertise<std_msgs::Float64MultiArray>("wheel_group_controller/command", 10);
-  cmd_pub_ptr = &cmd_pub;
 
   ros::Publisher odom_pub =
       nh.advertise<nav_msgs::Odometry>("odom", 10);
-  odom_pub_ptr = &odom_pub;
+	
+	std::shared_ptr<Ipublisher> l_MsgSender = std::make_shared<odomCreator>(cmd_pub, odom_pub);
 
-  ros::Subscriber sub = nh.subscribe("cmd_vel", 1000, cmdCallback);
 
-  ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&main_loop));
+  ros::Subscriber sub = nh.subscribe("cmd_vel", 1000, &Ipublisher::cmdCallback, l_MsgSender.get());
+
+
+
+  ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&Ipublisher::main_loop, l_MsgSender.get()));
 
   ROS_INFO("start base_controller");
   
-  last_get_vel_time=ros::Time::now();
-
 
   ros::spin();
+
+	return 1;
 }
+
+
+
+
