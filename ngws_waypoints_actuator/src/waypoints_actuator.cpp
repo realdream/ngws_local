@@ -22,6 +22,9 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <geometry_msgs/Twist.h>
 #include <ngws_msgs/WayPointArray.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Point.h>
+#include <math.h>
 
 ros::Publisher * cmd_pub_ptr;
 
@@ -31,6 +34,18 @@ ngws_msgs::WayPointArray waypoints_msgs;
 
 ros::Time last_get_odom_time;
 ros::Time last_get_waypoints_time;
+float wspeed=5;
+float aspeed=0.5;
+float maxv=0.5;
+float maxv2;
+float length;
+float t0,t1,t2,t3;
+float t; //jishiqi
+int biaozhi;
+int jihao=0;
+int wplength; //shuzuchangdu
+int i;//di ji ge dian
+
  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 
@@ -40,22 +55,223 @@ last_get_odom_time=ros::Time::now();
 
 }
 
+// void waypointsCallback(const ngws_msgs::WayPointArray::ConstPtr& msg)
+//{
+
+//waypoints_msgs=*msg;
+
+//length=juli();
+//t0=jdtime();
+//biaozhi=spcont();
+//if(biaozhi==1){
+//t1=maxv/aspeed;
+//t2=(length-(maxv*maxv/aspeed))/maxv;
+//}
+//if(biaozhi==2){
+//t3=sqrt(length/aspeed);
+//maxv2=aspeed*t3;
+//}
+//last_get_waypoints_time=ros::Time::now();
+// ROS_INFO("THIS IS:%f",&waypoint_msgs->x);
+
+//}
+
+float juli(){
+float xlength;
+float ylength;
+float length;
+xlength=odom_msg.pose.pose.position.x-waypoints_msgs.waypoints[i].waypoint.position.x;
+ylength=odom_msg.pose.pose.position.y-waypoints_msgs.waypoints[i].waypoint.position.y;
+
+length=sqrt(xlength*xlength+ylength*ylength);
+return length;
+}
+
+
+float jiajiao(){
+//float xlength;
+//float ylength;
+//float th1;
+//float th2;
+float th3;
+//xlength=waypoint_msg.position.x-odom_msg.position.x;
+//ylength=waypoint_msg.position.y-odom_msg.position.y;
+//th1=ylength/sqrt(xlength*xlength+ylength*ylength);
+//th2=acos(th1);
+//th2=th2*180/3.1415926;
+ th3=waypoints_msgs.waypoints[i].waypoint.orientation.z-odom_msg.pose.pose.orientation.z;
+
+//th=th-odom_msg.orientation.z;
+return th3;
+
+}
+
+
+float spcont(float length ){
+float temp;
+int fangan;
+temp=maxv*maxv/aspeed;
+
+if(temp<length){
+fangan=1;
+}
+else{
+fangan=2;
+}
+return fangan;
+}
+
+
+
+float jdtime(){
+float xlength;
+float th;
+float wtime;
+xlength=waypoints_msgs.waypoints[i].waypoint.position.x-odom_msg.pose.pose.position.x;
+th=jiajiao();
+if(th>0){
+if(xlength<0){
+wspeed=5;
+}
+else{
+wspeed=-5;
+}
+}
+else{
+if(xlength<0){
+wspeed=-5;
+}
+else{
+wspeed=5;
+}
+}
+wtime=th/wspeed;
+return wtime;
+}
+
+
+void  wpinit(){
+length=juli();
+t0=jdtime();
+biaozhi=spcont(length);
+if(biaozhi==1){
+t1=maxv/aspeed;
+t2=(length-(maxv*maxv/aspeed))/maxv;
+}
+if(biaozhi==2){
+t3=sqrt(length/aspeed);
+maxv2=aspeed*t3;
+}
+jihao=2;
+t=0;
+}
+
  void waypointsCallback(const ngws_msgs::WayPointArray::ConstPtr& msg)
 {
 
 waypoints_msgs=*msg;
+//ROS_INFO("start ");
+//length=juli();
+//t0=jdtime();
+//biaozhi=spcont(length);
+//if(biaozhi==1){
+//t1=maxv/aspeed;
+/*t2=(length-(maxv*maxv/aspeed))/maxv;
+}
+if(biaozhi==2){
+t3=sqrt(length/aspeed);
+maxv2=aspeed*t3;
+}
+jihao=1;*/
+wplength=(sizeof(waypoints_msgs.waypoints))/(sizeof(waypoints_msgs.waypoints[0]));
+jihao=1;
+i=0;
 last_get_waypoints_time=ros::Time::now();
-
+// ROS_INFO("THIS IS:%f",&waypoint_msgs->x);
 
 }
 
 void main_loop()
 {
+if(jihao==1){
+if(i<wplength){
+wpinit();
+}
+else{
+return;
+}
+}
 
 
-
+if(jihao==2){
+//ROS_INFO("start ");
+t+=0.01;
   geometry_msgs::Twist cmd;
+if(biaozhi==1){ 
+ if (t<t0){
+cmd.linear.x=0;
+cmd.linear.y=0;
+cmd.angular.z=wspeed;
+
+}
+ else if(t<t0+t1){
+cmd.linear.x=aspeed*(t-t0);
+cmd.linear.y=0;
+cmd.angular.z=0;
+
+}
+else if(t<t0+t1+t2){
+cmd.linear.x=maxv;
+cmd.linear.y=0;
+cmd.angular.z=0;
+
+}
+else if(t<t0+t1+t2+t3){
+cmd.linear.x=maxv-aspeed*(t-t0-t1-t2);
+cmd.linear.y=0;
+cmd.angular.z=0;
+
+}
+else{
+cmd.linear.x=0;
+cmd.linear.y=0;
+cmd.angular.z=0;
+}
+}
+if(biaozhi==2){
+if (t<t0){
+cmd.linear.x=0;
+cmd.linear.y=0;
+cmd.angular.z=wspeed;
+
+}
+if(t<t0+t3){
+cmd.linear.x=aspeed*(t-t0);
+cmd.linear.y=0;
+cmd.angular.z=0;
+
+}
+else if(t<t0+t3+t3){
+cmd.linear.x=maxv2-aspeed*(t-t0-t3);
+cmd.linear.y=0;
+cmd.angular.z=0;
+
+}
+else if(t<t0+t3+t3+waypoints_msgs.waypoints[i].halt_time) {
+cmd.linear.x=0;
+cmd.linear.y=0;
+cmd.angular.z=0;
+
+}
+else{
+jihao=1;
+i++;
+}
+}
   cmd_pub_ptr->publish(cmd);
+}
+
+
 }
 
 int main(int argc, char** argv){
@@ -73,7 +289,9 @@ int main(int argc, char** argv){
   ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&main_loop));
 
   ROS_INFO("start waypoints_actuator");
-  
+
+
+
   last_get_odom_time=ros::Time::now();
   last_get_waypoints_time=ros::Time::now();
 

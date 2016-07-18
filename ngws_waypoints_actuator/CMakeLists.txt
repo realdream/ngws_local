@@ -1,15 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ngws_waypoints_actuator)
-
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
+   geometry_msgs
   nav_msgs
   roscpp
   std_msgs
-  ngws_msgs
+   ngws_msgs
+  message_generation
+  genmsg
 )
 
 ## System dependencies are found with CMake's conventions
@@ -67,10 +68,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   nav_msgs#   std_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   geometry_msgs   nav_msgs   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -116,7 +117,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
+include  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -140,11 +141,24 @@ include_directories(
 # target_link_libraries(ngws_waypoints_actuator_node
 #   ${catkin_LIBRARIES}
 # )
+
+#add_executable(test src/test.cpp)
+#add_dependencies(test ngws_waypoints_actuator_generate_messages_cpp )
+#target_link_libraries(test
+#  ${catkin_LIBRARIES}
+#)
+
+
 add_executable(waypoints_actuator src/waypoints_actuator.cpp)
-add_dependencies(waypoints_actuator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+add_dependencies(waypoints_actuator ${${ngws_waypoints_actuator}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 target_link_libraries(waypoints_actuator
   ${catkin_LIBRARIES}
 )
+
+add_executable(test src/test.cpp)
+target_link_libraries(test  ${catkin_LIBRARIES})
+add_dependencies(test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 #############
 ## Install ##
 #############
