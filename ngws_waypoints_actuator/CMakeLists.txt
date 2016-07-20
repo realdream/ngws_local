@@ -159,6 +159,11 @@ add_executable(test1 src/test.cpp)
 target_link_libraries(test1  ${catkin_LIBRARIES})
 add_dependencies(test1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(listener src/listener.cpp)
+target_link_libraries(listener  ${catkin_LIBRARIES})
+add_dependencies(listener ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
 #############
 ## Install ##
 #############

@@ -25,7 +25,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <math.h>
-
+#include <ngws_msgs/WayPoint.h>
 ros::Publisher * cmd_pub_ptr;
 
 nav_msgs::Odometry odom_msg;
@@ -36,243 +36,259 @@ ros::Time last_get_odom_time;
 ros::Time last_get_waypoints_time;
 float wspeed=5;
 float aspeed=0.5;
-float maxv=0.5;
+float maxv=0.1;
 float maxv2;
 float length;
 float t0,t1,t2,t3;
 float t; //jishiqi
 int biaozhi;
 int jihao=0;
-int wplength; //shuzuchangdu
+long unsigned int wplength; //shuzuchangdu
 int i;//di ji ge dian
 
  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 
-odom_msg=*msg;
-last_get_odom_time=ros::Time::now();
+	odom_msg=*msg;
+	last_get_odom_time=ros::Time::now();
 
 
 }
 
-// void waypointsCallback(const ngws_msgs::WayPointArray::ConstPtr& msg)
-//{
+ float juli()
+{
+	float xlength;
+	float ylength;
+	float length;
 
-//waypoints_msgs=*msg;
-
-//length=juli();
-//t0=jdtime();
-//biaozhi=spcont();
-//if(biaozhi==1){
-//t1=maxv/aspeed;
-//t2=(length-(maxv*maxv/aspeed))/maxv;
-//}
-//if(biaozhi==2){
-//t3=sqrt(length/aspeed);
-//maxv2=aspeed*t3;
-//}
-//last_get_waypoints_time=ros::Time::now();
-// ROS_INFO("THIS IS:%f",&waypoint_msgs->x);
-
-//}
-
-float juli(){
-float xlength;
-float ylength;
-float length;
-xlength=odom_msg.pose.pose.position.x-waypoints_msgs.waypoints[i].waypoint.position.x;
-ylength=odom_msg.pose.pose.position.y-waypoints_msgs.waypoints[i].waypoint.position.y;
+	xlength=odom_msg.pose.pose.position.x-waypoints_msgs.waypoints[i].waypoint.position.x;
+	ylength=odom_msg.pose.pose.position.y-waypoints_msgs.waypoints[i].waypoint.position.y;
 
 length=sqrt(xlength*xlength+ylength*ylength);
+
 return length;
+
 }
 
 
-float jiajiao(){
+
+ float jiajiao()
+{
 //float xlength;
 //float ylength;
 //float th1;
 //float th2;
-float th3;
+	float th3;
 //xlength=waypoint_msg.position.x-odom_msg.position.x;
 //ylength=waypoint_msg.position.y-odom_msg.position.y;
 //th1=ylength/sqrt(xlength*xlength+ylength*ylength);
 //th2=acos(th1);
 //th2=th2*180/3.1415926;
- th3=waypoints_msgs.waypoints[i].waypoint.orientation.z-odom_msg.pose.pose.orientation.z;
+	th3=waypoints_msgs.waypoints[i].waypoint.orientation.z-odom_msg.pose.pose.orientation.z;
+	ROS_INFO("th3:%f",th3);
 
-//th=th-odom_msg.orientation.z;
 return th3;
 
 }
 
 
-float spcont(float length ){
-float temp;
-int fangan;
-temp=maxv*maxv/aspeed;
+ float spcont(float length )
+{
 
-if(temp<length){
-fangan=1;
-}
-else{
-fangan=2;
-}
-return fangan;
-}
+  float temp;
+  int fangan;
 
+  temp=maxv*maxv/aspeed;
 
+  if(temp<length)
+  {
+     fangan=1;
+  }
+  else
+  {	
+  fangan=2;
+  }
 
-float jdtime(){
-float xlength;
-float th;
-float wtime;
-xlength=waypoints_msgs.waypoints[i].waypoint.position.x-odom_msg.pose.pose.position.x;
-th=jiajiao();
-if(th>0){
-if(xlength<0){
-wspeed=5;
-}
-else{
-wspeed=-5;
-}
-}
-else{
-if(xlength<0){
-wspeed=-5;
-}
-else{
-wspeed=5;
-}
-}
-wtime=th/wspeed;
-return wtime;
+  return fangan;
+
 }
 
 
-void  wpinit(){
-length=juli();
-t0=jdtime();
-biaozhi=spcont(length);
-if(biaozhi==1){
-t1=maxv/aspeed;
-t2=(length-(maxv*maxv/aspeed))/maxv;
+
+ float jdtime()
+{
+  float xlength;
+  float th;
+  float wtime;
+
+  xlength=waypoints_msgs.waypoints[i].waypoint.position.x-odom_msg.pose.pose.position.x;
+  th=jiajiao();
+
+  if(th>0)
+  {
+   if(xlength<0)
+   {
+    wspeed=5;
+   }
+   else
+   {
+    wspeed=-5;
+   }
+  }
+  else
+  {
+   if(xlength<0)
+   {
+    wspeed=-5;
+   }
+  else
+   {
+    wspeed=5;
+   }
+  }
+  wtime=fabs(th/wspeed);
+  ROS_INFO("wtime:%f",wtime);
+  return wtime;
 }
-if(biaozhi==2){
-t3=sqrt(length/aspeed);
-maxv2=aspeed*t3;
-}
-jihao=2;
-t=0;
+
+
+ void wpinit()
+{
+  length=juli();
+  t0=jdtime();
+  biaozhi=spcont(length);
+
+  if(biaozhi==1)
+  {
+   t1=maxv/aspeed;
+   t2=(length-(maxv*maxv/aspeed))/maxv;
+  }
+
+  if(biaozhi==2)
+  {
+   t3=sqrt(length/aspeed);
+   maxv2=aspeed*t3;
+  }
+  jihao=2;
+  t=0;
 }
 
  void waypointsCallback(const ngws_msgs::WayPointArray::ConstPtr& msg)
 {
 
-waypoints_msgs=*msg;
-//ROS_INFO("start ");
-//length=juli();
-//t0=jdtime();
-//biaozhi=spcont(length);
-//if(biaozhi==1){
-//t1=maxv/aspeed;
-/*t2=(length-(maxv*maxv/aspeed))/maxv;
-}
-if(biaozhi==2){
-t3=sqrt(length/aspeed);
-maxv2=aspeed*t3;
-}
-jihao=1;*/
-wplength=(sizeof(waypoints_msgs.waypoints))/(sizeof(waypoints_msgs.waypoints[0]));
-jihao=1;
-i=0;
-last_get_waypoints_time=ros::Time::now();
-// ROS_INFO("THIS IS:%f",&waypoint_msgs->x);
+  waypoints_msgs=*msg;
+  wplength=waypoints_msgs.waypoints.size();
 
+  ROS_INFO("length:%d",wplength);
+  jihao=1;
+  i=0;
+  last_get_waypoints_time=ros::Time::now();
 }
 
 void main_loop()
 {
-if(jihao==1){
-if(i<wplength){
-wpinit();
-}
-else{
-return;
-}
-}
+    geometry_msgs::Twist cmd;
+    if(jihao==1)
+    {
+	if(i<wplength)
+	{
+		wpinit();
+	}
+   	else
+	{
+	return;
+	}
+    }
 
 
-if(jihao==2){
-//ROS_INFO("start ");
-t+=0.01;
-  geometry_msgs::Twist cmd;
-if(biaozhi==1){ 
- if (t<t0){
-cmd.linear.x=0;
-cmd.linear.y=0;
-cmd.angular.z=wspeed;
+  if(jihao==2)
+{
+   t+=0.01;
 
-}
- else if(t<t0+t1){
-cmd.linear.x=aspeed*(t-t0);
-cmd.linear.y=0;
-cmd.angular.z=0;
+   if(biaozhi==1)
+   { 
+    if (t<t0)
+    {
+     cmd.linear.x=0;
+     cmd.linear.y=t;
+     cmd.angular.z=wspeed;
+    } 
+    else if(t<t0+t1)
+    {
+     cmd.linear.x=aspeed*(t-t0);
+     cmd.linear.y=t;
+     cmd.angular.z=0;
 
-}
-else if(t<t0+t1+t2){
-cmd.linear.x=maxv;
-cmd.linear.y=0;
-cmd.angular.z=0;
+    }
+    else if(t<t0+t1+t2)
+    {
+     cmd.linear.x=maxv;
+     cmd.linear.y=t;
+     cmd.angular.z=0;
+    }
+    else if(t<t0+t1+t2+t1)
+    {
+     cmd.linear.x=maxv-aspeed*(t-t0-t1-t2);
+     cmd.linear.y=t;
+     cmd.angular.z=0;
+    }
 
-}
-else if(t<t0+t1+t2+t3){
-cmd.linear.x=maxv-aspeed*(t-t0-t1-t2);
-cmd.linear.y=0;
-cmd.angular.z=0;
+    else if(t<t0+t1+t2+t1+waypoints_msgs.waypoints[i].halt_time)
+    {
 
-}
-else{
-cmd.linear.x=0;
-cmd.linear.y=0;
-cmd.angular.z=0;
-}
-}
-if(biaozhi==2){
-if (t<t0){
-cmd.linear.x=0;
-cmd.linear.y=0;
-cmd.angular.z=wspeed;
+     cmd.linear.x=0;
+     cmd.linear.y=t;
+     cmd.angular.z=0;
+    }
 
-}
-if(t<t0+t3){
-cmd.linear.x=aspeed*(t-t0);
-cmd.linear.y=0;
-cmd.angular.z=0;
+    else
+    {
+     jihao=1;
+     i++;
+    }
+   }
+   if(biaozhi==2)
+   {
+    if (t<t0)
+    {
+     cmd.linear.x=0;
+     cmd.linear.y=0;
+     cmd.angular.z=wspeed;
 
-}
-else if(t<t0+t3+t3){
-cmd.linear.x=maxv2-aspeed*(t-t0-t3);
-cmd.linear.y=0;
-cmd.angular.z=0;
+    }
+    if(t<t0+t3)
+    {
+     cmd.linear.x=aspeed*(t-t0);
+     cmd.linear.y=0;
+     cmd.angular.z=0;
 
-}
-else if(t<t0+t3+t3+waypoints_msgs.waypoints[i].halt_time) {
-cmd.linear.x=0;
-cmd.linear.y=0;
-cmd.angular.z=0;
+    }
+    else if(t<t0+t3+t3)
+    {
+     cmd.linear.x=maxv2-aspeed*(t-t0-t3);
+     cmd.linear.y=0;
+     cmd.angular.z=0;
 
-}
-else{
-jihao=1;
-i++;
-}
-}
+    }
+    else if(t<t0+t3+t3+waypoints_msgs.waypoints[i].halt_time)
+    {
+     cmd.linear.x=0;
+     cmd.linear.y=0;
+     cmd.angular.z=0;
+
+    }
+    else
+    {
+     jihao=1;
+     i++;
+    }
+   }
   cmd_pub_ptr->publish(cmd);
 }
 
-
 }
+
+
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "waypoints_actuator");
