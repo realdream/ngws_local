@@ -49,24 +49,22 @@ int i;//di ji ge dian
  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 
-	odom_msg=*msg;
-	last_get_odom_time=ros::Time::now();
-
-
+  odom_msg=*msg;
+  last_get_odom_time=ros::Time::now();
 }
 
  float juli()
 {
-	float xlength;
-	float ylength;
-	float length;
+  float xlength;
+  float ylength;
+  float length;
 
-	xlength=odom_msg.pose.pose.position.x-waypoints_msgs.waypoints[i].waypoint.position.x;
-	ylength=odom_msg.pose.pose.position.y-waypoints_msgs.waypoints[i].waypoint.position.y;
+  xlength=odom_msg.pose.pose.position.x-waypoints_msgs.waypoints[i].waypoint.position.x;
+  ylength=odom_msg.pose.pose.position.y-waypoints_msgs.waypoints[i].waypoint.position.y;
 
-length=sqrt(xlength*xlength+ylength*ylength);
+  length=sqrt(xlength*xlength+ylength*ylength);
 
-return length;
+  return length;
 
 }
 
