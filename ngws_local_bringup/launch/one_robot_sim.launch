@@ -21,7 +21,7 @@
   <arg name="robot_group_ns" default="" />
   <arg name="robot_node_ns" default="ngws" />
   <group ns="$(arg robot_group_ns)/">
-    <include file="$(find ngws_gazebo)/launch/ngws_vehicle.launch">
+    <include file="$(find ngws_gazebo)/launch/ngws_vehicle_v1.0.launch">
       <arg name="parent_ns" value="$(arg robot_group_ns)/" />
       <arg name="this_ns" value="$(arg robot_node_ns)" />
       <arg name="id" value="" />
