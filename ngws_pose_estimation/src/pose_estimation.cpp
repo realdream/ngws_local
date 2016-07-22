@@ -51,13 +51,13 @@ last_get_odom_time=ros::Time::now();
 void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
 
-	pose_msg=*msg;
-	last_get_pose_time=ros::Time::now();
+  pose_msg=*msg;
+  last_get_pose_time=ros::Time::now();
 
-	geometry_msgs::Quaternion quatOfTag = pose_msg.pose.orientation;
-	double yawOfTag = tf::getYaw(quatOfTag);
-	double angleOfTag = (yawOfTag/M_PI)*180;
-	std::cout << "Angle of tag: " << angleOfTag << std::endl;
+  geometry_msgs::Quaternion quatOfTag = pose_msg.pose.orientation;
+  double yawOfTag = tf::getYaw(quatOfTag);
+  double angleOfTag = (yawOfTag/M_PI)*180;
+  std::cout << "Angle of tag: " << angleOfTag << std::endl;
 
 }
 
@@ -89,15 +89,15 @@ poseEstimation::~poseEstimation()
 }//end of namespace
 int main(int argc, char** argv)
 {
-	using namespace pose_estimation;
+  using namespace pose_estimation;
 
   ros::init(argc, argv, "pose_estimation");
   ros::NodeHandle nh;
 
-	std::shared_ptr<ros::Publisher> odom_pub = std::make_shared<ros::Publisher>(
+  std::shared_ptr<ros::Publisher> odom_pub = std::make_shared<ros::Publisher>(
       nh.advertise<nav_msgs::Odometry>("odom_fused", 10));
 //  odom_pub_ptr = &odom_pub;
-	std::shared_ptr<IPoseEstimation> l_poseEstimator = std::make_shared<poseEstimation>(std::move(odom_pub));
+  std::shared_ptr<IPoseEstimation> l_poseEstimator = std::make_shared<poseEstimation>(std::move(odom_pub));
 
   ros::Subscriber odom_sub = nh.subscribe("odom", 1000, &IPoseEstimation::odomCallback, l_poseEstimator.get());
 
