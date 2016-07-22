@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2015 Fadri Furrer, ASL, ETH Zurich, Switzerland
  * Copyright 2015 Michael Burri, ASL, ETH Zurich, Switzerland
  * Copyright 2015 Mina Kamel, ASL, ETH Zurich, Switzerland
@@ -17,11 +18,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <std_msgs/Int8.h>
+#include "pose_estimation.hpp"
+#include <tf/transform_broadcaster.h>
+#include <math.h>
 
+namespace pose_estimation
+{
+/*
 ros::Publisher * odom_pub_ptr;
 
 nav_msgs::Odometry odom_msg;
@@ -30,9 +33,13 @@ std_msgs::Int8 pose_status_msg;
  
 ros::Time last_get_odom_time;
 ros::Time last_get_pose_time;
-ros::Time last_get_pose_status_time;
+ros::Time last_get_pose_status_time;*/
+poseEstimation::poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr) : odom_pub_ptr(p_odom_pub_ptr), last_get_odom_time(ros::Time::now()), last_get_pose_time(ros::Time::now()), last_get_pose_status_time(ros::Time::now())
+{
 
- void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+}
+
+void poseEstimation::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 
 odom_msg=*msg;
@@ -41,16 +48,20 @@ last_get_odom_time=ros::Time::now();
 
 }
 
- void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
+void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
 
-pose_msg=*msg;
-last_get_pose_time=ros::Time::now();
+	pose_msg=*msg;
+	last_get_pose_time=ros::Time::now();
 
+	geometry_msgs::Quaternion quatOfTag = pose_msg.pose.orientation;
+	double yawOfTag = tf::getYaw(quatOfTag);
+	double angleOfTag = (yawOfTag/M_PI)*180;
+	std::cout << "Angle of tag: " << angleOfTag << std::endl;
 
 }
 
-void poseStatusCallback(const std_msgs::Int8::ConstPtr& msg)
+void poseEstimation::poseStatusCallback(const std_msgs::Int8::ConstPtr& msg)
 {
 
 pose_status_msg=*msg;
@@ -59,7 +70,7 @@ last_get_pose_status_time=ros::Time::now();
 
 }
 
-void main_loop()
+void poseEstimation::main_loop()
 {
   nav_msgs::Odometry odom;
 
@@ -71,28 +82,32 @@ void main_loop()
   odom_pub_ptr->publish(odom);
 }
 
-int main(int argc, char** argv){
+poseEstimation::~poseEstimation()
+{
+}
+
+}//end of namespace
+int main(int argc, char** argv)
+{
+	using namespace pose_estimation;
+
   ros::init(argc, argv, "pose_estimation");
   ros::NodeHandle nh;
 
-  ros::Publisher odom_pub =
-      nh.advertise<nav_msgs::Odometry>("odom_fused", 10);
-  odom_pub_ptr = &odom_pub;
+	std::shared_ptr<ros::Publisher> odom_pub = std::make_shared<ros::Publisher>(
+      nh.advertise<nav_msgs::Odometry>("odom_fused", 10));
+//  odom_pub_ptr = &odom_pub;
+	std::shared_ptr<IPoseEstimation> l_poseEstimator = std::make_shared<poseEstimation>(std::move(odom_pub));
 
-  ros::Subscriber odom_sub = nh.subscribe("odom", 1000, odomCallback);
+  ros::Subscriber odom_sub = nh.subscribe("odom", 1000, &IPoseEstimation::odomCallback, l_poseEstimator.get());
 
-  ros::Subscriber tracker_pose_sub = nh.subscribe("tag_tracker/object_position", 1000, poseCallback);
+  ros::Subscriber tracker_pose_sub = nh.subscribe("tag_tracker/object_position", 1000, &IPoseEstimation::poseCallback, l_poseEstimator.get());
 
-  ros::Subscriber tracker_status_sub = nh.subscribe("tag_tracker/status", 1000, poseStatusCallback);
+  ros::Subscriber tracker_status_sub = nh.subscribe("tag_tracker/status", 1000, &IPoseEstimation::poseStatusCallback, l_poseEstimator.get());
 
-  ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&main_loop));
+  ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&IPoseEstimation::main_loop, l_poseEstimator.get()));
 
   ROS_INFO("start pose_estimation");
-  
-  last_get_odom_time=ros::Time::now();
-  last_get_pose_time=ros::Time::now();
-  last_get_pose_status_time=ros::Time::now();
-
 
 
   ros::spin();
