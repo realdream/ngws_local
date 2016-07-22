@@ -25,87 +25,108 @@
 namespace ngws_local
 {
 
-odomCreator::odomCreator(ros::Publisher &p_cmd_pub, ros::Publisher &p_odom_pub)
+odomCreator::odomCreator(std::shared_ptr<ros::Publisher> p_cmd_ptr, std::shared_ptr<ros::Publisher> p_odom_ptr)
 {
-	cmd_pub_ptr.reset(&p_cmd_pub);
-	odom_pub_ptr.reset(&p_odom_pub);
-	currentPosition.pose.pose.position.x = 0;
-	currentPosition.pose.pose.position.y = 0;
-	currentPosition.pose.pose.position.z = 0;
-	lastTime = ros::Time::now();
-	last_get_vel_time = ros::Time::now();
+  cmd_pub_ptr = p_cmd_ptr;
+  odom_pub_ptr = p_odom_ptr;
+  currentPosition.pose.pose.position.x = 0;
+  currentPosition.pose.pose.position.y = 0;
+  currentPosition.pose.pose.position.z = 0;
+  lastTime = ros::Time::now();
+  last_get_vel_time = ros::Time::now();
+//TODO trans from launch file	
+  wheelDis = 0.6; 
+  wheelR = 0.08;
 }
 
 void odomCreator::cmdCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
 
-	vel_msg=*msg;
-	last_get_vel_time=ros::Time::now();
+  vel_msg=*msg;
+  last_get_vel_time=ros::Time::now();
 
 
 }
 
 void odomCreator::main_loop()
 {
-	currentTime = ros::Time::now();
-	ros::Duration timeBetweenLastVelMsg = ros::Time::now() - last_get_vel_time;
+  currentTime = ros::Time::now();
+  ros::Duration timeBetweenLastVelMsg = ros::Time::now() - last_get_vel_time;
   if(timeBetweenLastVelMsg > ros::Duration(0.5))
   {
     vel_msg.linear.x=0.0;
-  	vel_msg.linear.y=0.0;
+    vel_msg.linear.y=0.0;
     vel_msg.linear.z=0.0;
     vel_msg.angular.x=0.0;
     vel_msg.angular.y=0.0;
     vel_msg.angular.z=0.0;
   }
-	
-	tf::TransformBroadcaster odomBroadcaster;
+  
+  tf::TransformBroadcaster odomBroadcaster;
 
-	geometry_msgs::TransformStamped odomTrans;
-	odomTrans.header.stamp = currentTime;
-  odomTrans.header.frame_id = "odom";	
-	odomTrans.child_frame_id = "base_link";
+  geometry_msgs::TransformStamped odomTrans;
+  odomTrans.header.stamp = currentTime;
+  odomTrans.header.frame_id = "odom";
+  odomTrans.child_frame_id = "base_link";
 
   nav_msgs::Odometry odom;
-	odom.header.stamp = currentTime;
-	odom.header.frame_id = "odom";
+  odom.header.stamp = currentTime;
+  odom.header.frame_id = "odom";
 
 
   std_msgs::Float64MultiArray cmd;
 
-  cmd.data.resize(4);
+ // cmd.data.resize(4);
 
-	double pi;
-	pi = M_PI;
+//	cmd.data[0] = 0.1;
 
-	odom.twist.twist = vel_msg;
-	double dt = (currentTime - lastTime).toSec();
+  double pi;
+  pi = M_PI;
 
-	currentPosition.pose.pose.position.x += dt * (vel_msg.linear.x * cos(th) - vel_msg.linear.y * sin(th));
-	currentPosition.pose.pose.position.y += dt * (vel_msg.linear.y * cos(th) + vel_msg.linear.x * sin(th));
-	currentPosition.pose.pose.position.z = 0.0;
+  odom.twist.twist = vel_msg;
+  double dt = (currentTime - lastTime).toSec();
 
-	
+  currentPosition.pose.pose.position.x += dt * (vel_msg.linear.x * cos(th) - vel_msg.linear.y * sin(th));
+  currentPosition.pose.pose.position.y += dt * (vel_msg.linear.y * cos(th) + vel_msg.linear.x * sin(th));
+  currentPosition.pose.pose.position.z = 0.0;
+
+  
 
 
-	th += dt * vel_msg.angular.z;
-	geometry_msgs::Quaternion odomQuat = tf::createQuaternionMsgFromYaw(th);	
+  th += dt * vel_msg.angular.z;
+  geometry_msgs::Quaternion odomQuat = tf::createQuaternionMsgFromYaw(th);
 
-	odomTrans.transform.translation.x = currentPosition.pose.pose.position.x;
-	odomTrans.transform.translation.y = currentPosition.pose.pose.position.y;
-	odomTrans.transform.translation.z = 0.0;
-	odomTrans.transform.rotation = odomQuat;
+  odomTrans.transform.translation.x = currentPosition.pose.pose.position.x;
+  odomTrans.transform.translation.y = currentPosition.pose.pose.position.y;
+  odomTrans.transform.translation.z = 0.0;
+  odomTrans.transform.rotation = odomQuat;
 
-	odomBroadcaster.sendTransform(odomTrans);
+  odomBroadcaster.sendTransform(odomTrans);
 
-	odom.child_frame_id = "base_link";
-	odom.pose.pose.position = currentPosition.pose.pose.position;
-	odom.pose.pose.orientation = odomQuat;	
+  odom.child_frame_id = "base_link";
+  odom.pose.pose.position = currentPosition.pose.pose.position;
+  odom.pose.pose.orientation = odomQuat;	
+
+
+  buildCmdMsgForNormalWheel(cmd);
 
   odom_pub_ptr->publish(odom);
   cmd_pub_ptr->publish(cmd);
-	lastTime = currentTime;
+  lastTime = currentTime;
 }
+
+void odomCreator::buildCmdMsgForNormalWheel(std_msgs::Float64MultiArray &cmd)
+{
+  double xVel = vel_msg.linear.x;
+  double velDiff = vel_msg.angular.z * (wheelDis / 2);
+  double leftWheelVel = (xVel - velDiff) / wheelR;
+  double rightWheelVel = (xVel + velDiff) / wheelR;	
+  cmd.data.push_back(leftWheelVel);
+  cmd.data.push_back(rightWheelVel);
+  cmd.data.push_back(leftWheelVel);
+  cmd.data.push_back(rightWheelVel);
+}
+
 
 odomCreator::~odomCreator()
 {
@@ -115,19 +136,19 @@ odomCreator::~odomCreator()
 
 int main(int argc, char** argv)
 {
-	using namespace ngws_local;
+  using namespace ngws_local;
 
   ros::init(argc, argv, "base_controller");
   ros::NodeHandle nh;
 
 
-  ros::Publisher cmd_pub =
-      nh.advertise<std_msgs::Float64MultiArray>("wheel_group_controller/command", 10);
+  std::shared_ptr<ros::Publisher> cmd_pub = std::make_shared<ros::Publisher>(
+      nh.advertise<std_msgs::Float64MultiArray>("wheel_group_controller/command", 10));
 
-  ros::Publisher odom_pub =
-      nh.advertise<nav_msgs::Odometry>("odom", 10);
-	
-	std::shared_ptr<Ipublisher> l_MsgSender = std::make_shared<odomCreator>(cmd_pub, odom_pub);
+  std::shared_ptr<ros::Publisher> odom_pub = std::make_shared<ros::Publisher>(
+      nh.advertise<nav_msgs::Odometry>("odom", 10));
+
+  std::shared_ptr<Ipublisher> l_MsgSender = std::make_shared<odomCreator>(std::move(cmd_pub), std::move(odom_pub));
 
 
   ros::Subscriber sub = nh.subscribe("cmd_vel", 1000, &Ipublisher::cmdCallback, l_MsgSender.get());
@@ -141,7 +162,7 @@ int main(int argc, char** argv)
 
   ros::spin();
 
-	return 1;
+  return 1;
 }
 
 
