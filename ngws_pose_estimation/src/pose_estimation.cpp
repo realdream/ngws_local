@@ -53,6 +53,7 @@ void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& ms
 
   if(pose_status_msg.data != 3)return;
   if(ros::Time::now() - last_get_pose_status_time > ros::Duration(0.5))return;
+  if(pose_msg.pose.position.x == 0 || pose_msg.pose.position.x == 0.0)return;
 
   geometry_msgs::Quaternion quatOfTag = pose_msg.pose.orientation;
   double yawOfTag = tf::getYaw(quatOfTag);
