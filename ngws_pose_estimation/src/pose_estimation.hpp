@@ -31,7 +31,7 @@ public:
   void main_loop();
   ~poseEstimation();
 private:
-	void buildOdomfusedMsg(nav_msgs::Odometry & odom);
+  void buildOdomfusedMsg(nav_msgs::Odometry & odom);
   std::shared_ptr<ros::Publisher>	odom_pub_ptr;
 
   ros::Time last_get_odom_time;	
@@ -42,12 +42,12 @@ private:
   geometry_msgs::PoseStamped pose_msg;
   std_msgs::Int8 pose_status_msg;
 
-	double qrcodePositionX;
-	double qrcodePositionY;
+  double qrcodePositionX;
+  double qrcodePositionY;
 
-	double offsetOfYaw;
-	double offsetOfX;
-	double offsetOfY;
+  double offsetOfYaw;
+  double offsetOfX;
+  double offsetOfY;
 
 };
 
