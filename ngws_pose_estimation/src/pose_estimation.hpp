@@ -24,13 +24,14 @@ public:
 class poseEstimation : public IPoseEstimation
 {
 public:
-  poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr);
+  poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr, ros::Time p_Time);
   void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
   void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
   void poseStatusCallback(const std_msgs::Int8::ConstPtr& msg);
   void main_loop();
   ~poseEstimation();
 private:
+	void buildOdomfusedMsg(nav_msgs::Odometry & odom);
   std::shared_ptr<ros::Publisher>	odom_pub_ptr;
 
   ros::Time last_get_odom_time;	
@@ -40,6 +41,13 @@ private:
   nav_msgs::Odometry odom_msg;
   geometry_msgs::PoseStamped pose_msg;
   std_msgs::Int8 pose_status_msg;
+
+	double qrcodePositionX;
+	double qrcodePositionY;
+
+	double offsetOfYaw;
+	double offsetOfX;
+	double offsetOfY;
 
 };
 
