@@ -119,8 +119,8 @@ void odomCreator::buildCmdMsgForNormalWheel(std_msgs::Float64MultiArray &cmd)
 {
   double xVel = vel_msg.linear.x;
   double velDiff = vel_msg.angular.z * (wheelDis / 2);
-  double leftWheelVel = (xVel - velDiff) / wheelR;
-  double rightWheelVel = (xVel + velDiff) / wheelR;	
+  double leftWheelVel = (xVel + velDiff) / wheelR;
+  double rightWheelVel = (xVel - velDiff) / wheelR;	
   cmd.data.push_back(leftWheelVel);
   cmd.data.push_back(rightWheelVel);
   cmd.data.push_back(leftWheelVel);
