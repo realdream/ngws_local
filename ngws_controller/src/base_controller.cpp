@@ -36,7 +36,7 @@ odomCreator::odomCreator(std::shared_ptr<ros::Publisher> p_cmd_ptr, std::shared_
   last_get_vel_time = ros::Time::now();
 //TODO trans from launch file	
   wheelDis = 0.6; 
-  wheelR = 0.08;
+  wheelR = 0.05;
 }
 
 void odomCreator::cmdCallback(const geometry_msgs::Twist::ConstPtr& msg)
