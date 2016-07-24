@@ -21,15 +21,17 @@
 #include "pose_estimation.hpp"
 #include <tf/transform_broadcaster.h>
 #include <math.h>
+#include <string>
+#include <sstream>
 
 namespace pose_estimation
 {
 
-poseEstimation::poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr, ros::Time p_time) : odom_pub_ptr(p_odom_pub_ptr), last_get_odom_time(p_time), last_get_pose_time(p_time), last_get_pose_status_time(p_time)
+poseEstimation::poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr, ros::Time p_time) : odom_pub_ptr(p_odom_pub_ptr), last_get_odom_time(p_time), last_get_pose_time(p_time), last_get_pose_status_time(p_time), last_get_tag_msg_time(p_time)
 {
 //TODO read from tag id
-  qrcodePositionX = 1.0;
-  qrcodePositionY = 1.0;
+//  qrcodePositionX = 1.0;
+//  qrcodePositionY = 1.0;
 
   offsetOfYaw = 0.0;
   offsetOfX = 0.0;
@@ -53,7 +55,10 @@ void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& ms
 
   if(pose_status_msg.data != 3)return;
   if(ros::Time::now() - last_get_pose_status_time > ros::Duration(0.5))return;
+  if(ros::Time::now() - last_get_tag_msg_time > ros::Duration(0.5)) return;
   if(pose_msg.pose.position.x == 0 || pose_msg.pose.position.x == 0.0)return;
+
+  updateQrcodePosition();	
 
   geometry_msgs::Quaternion quatOfTag = pose_msg.pose.orientation;
   double yawOfTag = tf::getYaw(quatOfTag);
@@ -67,9 +72,19 @@ void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& ms
   offsetOfY = realY - odom_msg.pose.pose.position.y;
 //  double angleOfTag = (yawOfTag/M_PI)*180;
 //  std::cout << "Angle of tag: " << angleOfTag << std::endl;
-  
-  
+}
 
+void poseEstimation::updateQrcodePosition()
+{
+  std::string msgData = tag_msg.data.data(); 
+  std::stringstream sStream;
+  int pos = msgData.find(',');
+  if(pos == -1)return;
+  std::string tmp = msgData.replace(pos, 1, 1, ' ');	
+  sStream << tmp;
+  sStream >> qrcodePositionX;
+  sStream >> qrcodePositionY;
+//	std::cout << "x: " << qrcodePositionX << "y: " << qrcodePositionY<< std::endl;
 }
 
 void poseEstimation::poseStatusCallback(const std_msgs::Int8::ConstPtr& msg)
@@ -139,9 +154,22 @@ void poseEstimation::main_loop()
   odom_pub_ptr->publish(odom);
 }
 
+void poseEstimation::tagMsgCallback(const std_msgs::String::ConstPtr& msg)
+{
+  tag_msg = *msg;
+
+
+
+
+  last_get_tag_msg_time = ros::Time::now();	
+
+}
+
+
 poseEstimation::~poseEstimation()
 {
 }
+
 
 }//end of namespace
 int main(int argc, char** argv)
@@ -161,6 +189,8 @@ int main(int argc, char** argv)
   ros::Subscriber tracker_pose_sub = nh.subscribe("tag_tracker/object_position", 1000, &IPoseEstimation::poseCallback, l_poseEstimator.get());
 
   ros::Subscriber tracker_status_sub = nh.subscribe("tag_tracker/status", 1000, &IPoseEstimation::poseStatusCallback, l_poseEstimator.get());
+
+  ros::Subscriber tag_msg_sub = nh.subscribe("tag_tracker/code_message", 1000, &IPoseEstimation::tagMsgCallback, l_poseEstimator.get());
 
   ros::Timer cmd_timer =nh.createTimer(ros::Duration(0.01), boost::bind(&IPoseEstimation::main_loop, l_poseEstimator.get()));
 
