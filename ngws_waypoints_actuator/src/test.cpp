@@ -19,19 +19,24 @@ nav_msgs::Odometry msg;
 ngws_msgs::WayPoint msg1;
 ngws_msgs::WayPointArray msg2;
 
+     msg.pose.pose.orientation.x=0;
+     msg.pose.pose.orientation.y=0;
+     msg.pose.pose.orientation.z=0.5;
+     msg.pose.pose.orientation.w=0.866;
+
      msg1.waypoint.position.x=0;
      msg1.waypoint.position.y=1;
-     msg1.waypoint.orientation.z=90;
+  //   msg1.waypoint.orientation.z=90;
        msg2.waypoints.push_back(msg1);
 
      msg1.waypoint.position.x=1;
      msg1.waypoint.position.y=1;
-     msg1.waypoint.orientation.z=0;
+    // msg1.waypoint.orientation.z=0;
        msg2.waypoints.push_back(msg1);
 
     msg1.waypoint.position.x=1;
     msg1.waypoint.position.y=2;
-    msg1.waypoint.orientation.z=0;
+  //  msg1.waypoint.orientation.z=0;
        msg2.waypoints.push_back(msg1);
 //ros::Rate loop_rate(0.01);
 

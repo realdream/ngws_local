@@ -26,6 +26,8 @@
 #include <geometry_msgs/Point.h>
 #include <math.h>
 #include <ngws_msgs/WayPoint.h>
+#include <tf/transform_broadcaster.h>
+
 ros::Publisher * cmd_pub_ptr;
 
 nav_msgs::Odometry odom_msg;
@@ -72,20 +74,39 @@ int i;//di ji ge dian
 
  float jiajiao()
 {
-//float xlength;
-//float ylength;
-//float th1;
-//float th2;
-	float th3;
-//xlength=waypoint_msg.position.x-odom_msg.position.x;
-//ylength=waypoint_msg.position.y-odom_msg.position.y;
-//th1=ylength/sqrt(xlength*xlength+ylength*ylength);
-//th2=acos(th1);
-//th2=th2*180/3.1415926;
-	th3=waypoints_msgs.waypoints[i].waypoint.orientation.z-odom_msg.pose.pose.orientation.z;
-	ROS_INFO("th3:%f",th3);
+  float xlength;
+  float ylength;
+  float th;
+  float th1;
+  float th2;
+  float th3;
 
-return th3;
+  xlength=waypoints_msgs.waypoints[i].waypoint.position.x-odom_msg.pose.pose.position.x;
+  ylength=waypoints_msgs.waypoints[i].waypoint.position.y-odom_msg.pose.pose.position.y;
+  th1=xlength/sqrt(xlength*xlength+ylength*ylength);
+  th2=acos(th1);
+  th2=th2*180/3.1415926;
+ 
+  if(ylength<0)
+  {
+   th2=-th2;
+  }
+
+geometry_msgs::Quaternion quatOfTag=odom_msg.pose.pose.orientation;
+ th=tf::getYaw(quatOfTag);
+ th=th*180/3.1415926;
+// th=odom_msg.pose.pose.orientation.z;
+  
+  if(th>180)
+  {
+   th=th-360;
+  }
+  
+  th3=th2-th;
+
+  ROS_INFO("th3:%f",th3);
+
+  return th3;
 
 }
 
@@ -115,16 +136,15 @@ return th3;
 
  float jdtime()
 {
-  float xlength;
+ 
   float th;
   float wtime;
 
-  xlength=waypoints_msgs.waypoints[i].waypoint.position.x-odom_msg.pose.pose.position.x;
   th=jiajiao();
 
-  if(th>0)
+  if(fabs(th)<=180)
   {
-   if(xlength<0)
+   if(th>0)
    {
     wspeed=5;
    }
@@ -135,13 +155,16 @@ return th3;
   }
   else
   {
-   if(xlength<0)
+   
+   if(th>0)
    {
     wspeed=-5;
+    th=360-fabs(th);
    }
-  else
+   else
    {
     wspeed=5;
+    th=360-fabs(th);
    }
   }
   wtime=fabs(th/wspeed);
