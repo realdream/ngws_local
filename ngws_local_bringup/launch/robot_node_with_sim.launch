@@ -8,7 +8,7 @@
 	<arg name="P" default="0" />
 	<arg name="Y" default="0" />
   <arg name="id" default="" />
-    <include file="$(find ngws_gazebo)/launch/ngws_vehicle.launch">
+    <include file="$(find ngws_gazebo)/launch/ngws_vehicle_v1.0.launch">
       <arg name="parent_ns" value="$(arg robot_group_ns)/" />
       <arg name="this_ns" value="$(arg robot_node_ns)" />
       <arg name="id" value="$(arg id)" />
