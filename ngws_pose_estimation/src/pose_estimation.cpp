@@ -98,11 +98,14 @@ last_get_pose_status_time=ros::Time::now();
 
 void poseEstimation::buildOdomfusedMsg(nav_msgs::Odometry & odom)
 {
+  if(odom_msg.pose.pose.orientation.x == 0 && odom_msg.pose.pose.orientation.y ==0 && odom_msg.pose.pose.orientation.z ==0 &&odom_msg.pose.pose.orientation.w ==0 ) return;
+
   tf::TransformBroadcaster odom_broadcaster;
 
   ros::Time current_time = ros::Time::now();
 
   geometry_msgs::Quaternion quadOfVehicle = odom_msg.pose.pose.orientation;
+	
 
   double x = odom_msg.pose.pose.position.x + offsetOfX;
   double y = odom_msg.pose.pose.position.y + offsetOfY;

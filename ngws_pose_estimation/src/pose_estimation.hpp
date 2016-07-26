@@ -44,6 +44,7 @@ private:
   ros::Time last_get_tag_msg_time;
 
   nav_msgs::Odometry odom_msg;
+  nav_msgs::Odometry init_msg;
   geometry_msgs::PoseStamped pose_msg;
   std_msgs::Int8 pose_status_msg;
   std_msgs::String tag_msg;
