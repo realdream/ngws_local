@@ -29,13 +29,12 @@ namespace pose_estimation
 
 poseEstimation::poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr, ros::Time p_time) : odom_pub_ptr(p_odom_pub_ptr), last_get_odom_time(p_time), last_get_pose_time(p_time), last_get_pose_status_time(p_time), last_get_tag_msg_time(p_time)
 {
-//TODO read from tag id
-//  qrcodePositionX = 1.0;
-//  qrcodePositionY = 1.0;
-
   offsetOfYaw = 0.0;
   offsetOfX = 0.0;
   offsetOfY = 0.0;
+  doffsetOfYaw = M_PI/60;
+  doffsetOfX = 0.1/30;
+  doffsetOfY = 0.1/30;
 }
 
 void poseEstimation::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -49,6 +48,9 @@ last_get_odom_time=ros::Time::now();
 
 void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
+  double l_offsetOfYaw = 0.0;
+  double l_offsetOfY = 0.0;
+  double l_offsetOfX = 0.0;
 
   pose_msg=*msg;
   last_get_pose_time=ros::Time::now();
@@ -67,9 +69,43 @@ void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& ms
   double realY = pose_msg.pose.position.x + qrcodePositionY;
 
   geometry_msgs::Quaternion quatOfVehicle = odom_msg.pose.pose.orientation;
-  offsetOfYaw = realYaw - tf::getYaw(quatOfVehicle); 
-  offsetOfX = realX - odom_msg.pose.pose.position.x;
-  offsetOfY = realY - odom_msg.pose.pose.position.y;
+  l_offsetOfYaw = realYaw - tf::getYaw(quatOfVehicle); 
+  l_offsetOfX = realX - odom_msg.pose.pose.position.x;
+  l_offsetOfY = realY - odom_msg.pose.pose.position.y;
+
+  if(l_offsetOfX > offsetOfX)
+  {
+    offsetOfX += doffsetOfX;
+    if(l_offsetOfX <= offsetOfX)offsetOfX = l_offsetOfX;
+  }
+  else
+  {
+    offsetOfX -= doffsetOfX;
+    if(l_offsetOfX >= offsetOfX)offsetOfX = l_offsetOfX;
+  }
+
+  if(l_offsetOfY > offsetOfY)
+  {
+    offsetOfY += doffsetOfY;
+    if(l_offsetOfY <= offsetOfY)offsetOfY = l_offsetOfY;
+  }
+  else
+  {
+    offsetOfY -= doffsetOfY;
+    if(l_offsetOfY >= offsetOfY)offsetOfY = l_offsetOfY;
+  }
+
+  if(l_offsetOfYaw > offsetOfYaw)
+  {
+    offsetOfYaw += doffsetOfYaw;
+    if(l_offsetOfYaw <= offsetOfYaw)offsetOfYaw = l_offsetOfYaw;
+  }
+  else
+  {
+    offsetOfYaw -= doffsetOfYaw;
+    if(l_offsetOfYaw >= offsetOfYaw)offsetOfYaw = l_offsetOfYaw;
+  }
+
 //  double angleOfTag = (yawOfTag/M_PI)*180;
 //  std::cout << "Angle of tag: " << angleOfTag << std::endl;
 }

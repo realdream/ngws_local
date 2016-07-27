@@ -56,6 +56,10 @@ private:
   double offsetOfX;
   double offsetOfY;
 
+  double doffsetOfYaw;
+  double doffsetOfX;
+  double doffsetOfY;
+
 };
 
 
