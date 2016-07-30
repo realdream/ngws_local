@@ -23,6 +23,7 @@
 #include <math.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 namespace pose_estimation
 {
@@ -146,6 +147,7 @@ void poseEstimation::buildOdomfusedMsg(nav_msgs::Odometry & odom)
   double x = odom_msg.pose.pose.position.x + offsetOfX;
   double y = odom_msg.pose.pose.position.y + offsetOfY;
   double th = tf::getYaw(quadOfVehicle) + offsetOfYaw;
+  std::cout << "Angle of vehicle: " << th << std::endl;
 
   double vx = odom_msg.twist.twist.linear.x;
   double vy = odom_msg.twist.twist.linear.y;
