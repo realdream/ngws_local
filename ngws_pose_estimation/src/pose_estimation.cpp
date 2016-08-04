@@ -125,8 +125,8 @@ void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& ms
 
 //  std::cout << "offsetOfX: " << offsetOfX << std::endl;
 //  std::cout << "offsetOfYaw: " << offsetOfYaw << std::endl;
-//  double angleOfTag = (yawOfTag/M_PI)*180;
-//  std::cout << "Angle of tag: " << angleOfTag << std::endl;
+  double angleOfTag = (realYaw/M_PI)*180;
+  std::cout << "Angle of tag: " << angleOfTag << std::endl;
 }
 
 void poseEstimation::updateQrcodePosition()
