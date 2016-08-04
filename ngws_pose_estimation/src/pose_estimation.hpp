@@ -36,6 +36,8 @@ public:
 private:
   void buildOdomfusedMsg(nav_msgs::Odometry & odom);
   void updateQrcodePosition();
+  double getYawFromQuat(geometry_msgs::Quaternion p_quat);
+  double convertAngleInTwoPI(double p_angle);
   std::shared_ptr<ros::Publisher>	odom_pub_ptr;
 
   ros::Time last_get_odom_time;	
@@ -44,6 +46,7 @@ private:
   ros::Time last_get_tag_msg_time;
 
   nav_msgs::Odometry odom_msg;
+  nav_msgs::Odometry init_msg;
   geometry_msgs::PoseStamped pose_msg;
   std_msgs::Int8 pose_status_msg;
   std_msgs::String tag_msg;
@@ -54,6 +57,10 @@ private:
   double offsetOfYaw;
   double offsetOfX;
   double offsetOfY;
+
+  double doffsetOfYaw;
+  double doffsetOfX;
+  double doffsetOfY;
 
 };
 
