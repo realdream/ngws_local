@@ -23,19 +23,19 @@
 #include <math.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 namespace pose_estimation
 {
 
 poseEstimation::poseEstimation(std::shared_ptr<ros::Publisher> p_odom_pub_ptr, ros::Time p_time) : odom_pub_ptr(p_odom_pub_ptr), last_get_odom_time(p_time), last_get_pose_time(p_time), last_get_pose_status_time(p_time), last_get_tag_msg_time(p_time)
 {
-//TODO read from tag id
-//  qrcodePositionX = 1.0;
-//  qrcodePositionY = 1.0;
-
   offsetOfYaw = 0.0;
   offsetOfX = 0.0;
   offsetOfY = 0.0;
+  doffsetOfYaw = M_PI/60;
+  doffsetOfX = 0.1/30;
+  doffsetOfY = 0.1/30;
 }
 
 void poseEstimation::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -47,8 +47,25 @@ last_get_odom_time=ros::Time::now();
 
 }
 
+double poseEstimation::convertAngleInTwoPI(double p_angle)
+{
+  if(p_angle < (0 - M_PI))return convertAngleInTwoPI(p_angle + (2 * M_PI));
+  if(p_angle > M_PI)return convertAngleInTwoPI(p_angle - (2 * M_PI));
+  return p_angle;
+}
+
+double poseEstimation::getYawFromQuat(geometry_msgs::Quaternion p_quat)
+{
+  double l_yaw = tf::getYaw(p_quat);
+  return convertAngleInTwoPI(l_yaw);
+
+}
+
 void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
+  double l_offsetOfYaw = 0.0;
+  double l_offsetOfY = 0.0;
+  double l_offsetOfX = 0.0;
 
   pose_msg=*msg;
   last_get_pose_time=ros::Time::now();
@@ -62,16 +79,54 @@ void poseEstimation::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& ms
 
   geometry_msgs::Quaternion quatOfTag = pose_msg.pose.orientation;
   double yawOfTag = tf::getYaw(quatOfTag);
-  double realYaw = (yawOfTag - M_PI / 2);
+  double realYaw = convertAngleInTwoPI(yawOfTag - M_PI / 2);
   double realX = pose_msg.pose.position.y + qrcodePositionX;
   double realY = pose_msg.pose.position.x + qrcodePositionY;
 
   geometry_msgs::Quaternion quatOfVehicle = odom_msg.pose.pose.orientation;
-  offsetOfYaw = realYaw - tf::getYaw(quatOfVehicle); 
-  offsetOfX = realX - odom_msg.pose.pose.position.x;
-  offsetOfY = realY - odom_msg.pose.pose.position.y;
-//  double angleOfTag = (yawOfTag/M_PI)*180;
-//  std::cout << "Angle of tag: " << angleOfTag << std::endl;
+  l_offsetOfYaw = convertAngleInTwoPI(realYaw - getYawFromQuat(quatOfVehicle)); 
+  l_offsetOfX = realX - odom_msg.pose.pose.position.x;
+  l_offsetOfY = realY - odom_msg.pose.pose.position.y;
+
+  if(l_offsetOfX > offsetOfX)
+  {
+    offsetOfX += doffsetOfX;
+    if(l_offsetOfX <= offsetOfX)offsetOfX = l_offsetOfX;
+  }
+  else
+  {
+    offsetOfX -= doffsetOfX;
+    if(l_offsetOfX >= offsetOfX)offsetOfX = l_offsetOfX;
+  }
+
+  if(l_offsetOfY > offsetOfY)
+  {
+    offsetOfY += doffsetOfY;
+    if(l_offsetOfY <= offsetOfY)offsetOfY = l_offsetOfY;
+  }
+  else
+  {
+    offsetOfY -= doffsetOfY;
+    if(l_offsetOfY >= offsetOfY)offsetOfY = l_offsetOfY;
+  }
+
+  if(convertAngleInTwoPI(l_offsetOfYaw - offsetOfYaw) > 0.0)
+  {
+    offsetOfYaw += doffsetOfYaw;
+    offsetOfYaw = convertAngleInTwoPI(offsetOfYaw);
+    if(convertAngleInTwoPI(l_offsetOfYaw - offsetOfYaw) <= 0.0)offsetOfYaw = l_offsetOfYaw;
+  }
+  else
+  {
+    offsetOfYaw -= doffsetOfYaw;
+    offsetOfYaw = convertAngleInTwoPI(offsetOfYaw);
+    if(convertAngleInTwoPI(l_offsetOfYaw - offsetOfYaw) >= 0.0)offsetOfYaw = l_offsetOfYaw;
+  }
+
+//  std::cout << "offsetOfX: " << offsetOfX << std::endl;
+//  std::cout << "offsetOfYaw: " << offsetOfYaw << std::endl;
+  double angleOfTag = (realYaw/M_PI)*180;
+  std::cout << "Angle of tag: " << angleOfTag << std::endl;
 }
 
 void poseEstimation::updateQrcodePosition()
@@ -98,15 +153,19 @@ last_get_pose_status_time=ros::Time::now();
 
 void poseEstimation::buildOdomfusedMsg(nav_msgs::Odometry & odom)
 {
+  if(odom_msg.pose.pose.orientation.x == 0 && odom_msg.pose.pose.orientation.y ==0 && odom_msg.pose.pose.orientation.z ==0 &&odom_msg.pose.pose.orientation.w ==0 ) return;
+
   tf::TransformBroadcaster odom_broadcaster;
 
   ros::Time current_time = ros::Time::now();
 
   geometry_msgs::Quaternion quadOfVehicle = odom_msg.pose.pose.orientation;
 
+
   double x = odom_msg.pose.pose.position.x + offsetOfX;
   double y = odom_msg.pose.pose.position.y + offsetOfY;
-  double th = tf::getYaw(quadOfVehicle) + offsetOfYaw;
+  double th = convertAngleInTwoPI(tf::getYaw(quadOfVehicle) + offsetOfYaw);
+  std::cout << "Angle of vehicle: " << th << "  " << (th/M_PI)*180.0 << std::endl;
 
   double vx = odom_msg.twist.twist.linear.x;
   double vy = odom_msg.twist.twist.linear.y;
