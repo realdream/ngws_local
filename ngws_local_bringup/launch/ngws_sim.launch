@@ -39,7 +39,7 @@
       <arg name="robot_node_ns" value="$(arg robot_node_ns)" />
       <arg name="id" value="1" />
       <arg name="x" value="0" />
-      <arg name="y" value="1.5" />
+      <arg name="y" value="1" />
       <arg name="z" value="0" />
       <arg name="R" value="0" />
       <arg name="P" value="0" />
@@ -50,7 +50,7 @@
          <arg name="robot_node_ns" value="$(arg robot_node_ns)" />
          <arg name="id" value="2" />
          <arg name="x" value="0" />
-         <arg name="y" value="-1.5" />
+         <arg name="y" value="-1" />
          <arg name="z" value="0" />
          <arg name="R" value="0" />
          <arg name="P" value="0" />
@@ -60,8 +60,8 @@
          <arg name="robot_group_ns" value="$(arg robot_group_ns)/" />
          <arg name="robot_node_ns" value="$(arg robot_node_ns)" />
          <arg name="id" value="3" />
-         <arg name="x" value="1.5" />
-         <arg name="y" value="-1.5" />
+         <arg name="x" value="1" />
+         <arg name="y" value="-1" />
          <arg name="z" value="0" />
          <arg name="R" value="0" />
          <arg name="P" value="0" />
@@ -71,8 +71,8 @@
          <arg name="robot_group_ns" value="$(arg robot_group_ns)/" />
          <arg name="robot_node_ns" value="$(arg robot_node_ns)" />
          <arg name="id" value="4" />
-         <arg name="x" value="1.5" />
-         <arg name="y" value="1.5" />
+         <arg name="x" value="1" />
+         <arg name="y" value="1" />
          <arg name="z" value="0" />
          <arg name="R" value="0" />
          <arg name="P" value="0" />
